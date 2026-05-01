@@ -726,13 +726,28 @@ function renderCapeCanvas(canvas, imgSrc) {
   const img = new Image();
   img.onload = () => {
     ctx.clearRect(0, 0, 60, 96);
-    ctx.imageSmoothingEnabled = false;
-    if (img.height === img.width) {
-      // Skin — show face area (8x8 at 8,8 in 64x64)
-      ctx.drawImage(img, 8, 8, 8, 8, 10, 4, 40, 40);
+    ctx.imageSmoothingEnabled = true; // smooth for hi-res textures
+    ctx.imageSmoothingQuality = 'high';
+
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+
+    if (h === w) {
+      // Square = Skin texture (64x64 or any square)
+      // Face area: proportional to 8x8 at offset 8,8 in 64x64
+      const faceX = w * (8/64);
+      const faceY = h * (8/64);
+      const faceW = w * (8/64);
+      const faceH = h * (8/64);
+      ctx.drawImage(img, faceX, faceY, faceW, faceH, 8, 8, 44, 44);
     } else {
-      // Cape — front face: x=1,y=1 w=10 h=16 in 64x32 sheet
-      ctx.drawImage(img, 1, 1, 10, 16, 0, 0, 60, 96);
+      // Cape texture (any resolution, must be 2:1 ratio)
+      // Front face is proportionally at x=1/64, y=1/32, w=10/64, h=16/32
+      const srcX = w * (1/64);
+      const srcY = h * (1/32);
+      const srcW = w * (10/64);
+      const srcH = h * (16/32);
+      ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, 60, 96);
     }
   };
   img.crossOrigin = 'anonymous';

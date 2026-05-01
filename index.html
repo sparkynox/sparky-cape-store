@@ -576,21 +576,22 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="frames.js"></script>
 <script>
 // Demo capes data
 const DEMO = [
-  {id:'none',   name:'No Cape',   type:'static',   g:'g8', author:'SparkyNox'},
-  {id:'cape1',  name:'Cape 1',    type:'static',   g:'g1', author:'SparkyNox'},
-  {id:'cape2',  name:'Cape 2',    type:'static',   g:'g2', author:'SparkyNox'},
-  {id:'cape3',  name:'Cape 3',    type:'static',   g:'g3', author:'SparkyNox'},
-  {id:'cape4',  name:'Cape 4',    type:'static',   g:'g4', author:'SparkyNox'},
-  {id:'cape5',  name:'Cape 5',    type:'static',   g:'g5', author:'SparkyNox'},
-  {id:'cape6',  name:'Cape 6',    type:'static',   g:'g6', author:'SparkyNox'},
-  {id:'cape7',  name:'Cape 7',    type:'static',   g:'g7', author:'SparkyNox'},
-  {id:'cape8',  name:'Cape 8',    type:'static',   g:'g1', author:'SparkyNox'},
-  {id:'cape9',  name:'Cape 9',    type:'static',   g:'g2', author:'SparkyNox'},
-  {id:'cape10', name:'Cape 10',   type:'static',   g:'g3', author:'SparkyNox'},
-  {id:'pixellab',name:'PixelLab', type:'animated', g:'ga', author:'SparkyNox'},
+  {id:'none',    name:'No Cape',  type:'static',   g:'g8', author:'Nox'},
+  {id:'cape1',   name:'Cape 1',   type:'static',   g:'g1', author:'Nox'},
+  {id:'cape2',   name:'Cape 2',   type:'static',   g:'g2', author:'Nox'},
+  {id:'cape3',   name:'Cape 3',   type:'static',   g:'g3', author:'Nox'},
+  {id:'cape4',   name:'Cape 4',   type:'static',   g:'g4', author:'Nox'},
+  {id:'cape5',   name:'Cape 5',   type:'static',   g:'g5', author:'Nox'},
+  {id:'cape6',   name:'Cape 6',   type:'static',   g:'g6', author:'Nox'},
+  {id:'cape7',   name:'Cape 7',   type:'static',   g:'g7', author:'Nox'},
+  {id:'cape8',   name:'Cape 8',   type:'static',   g:'g1', author:'Nox'},
+  {id:'cape9',   name:'Cape 9',   type:'static',   g:'g2', author:'Nox'},
+  {id:'cape10',  name:'Cape 10',  type:'static',   g:'g3', author:'Nox'},
+  {id:'pixellab',name:'PixelLab', type:'animated', g:'ga', author:'Nox', animated:true},
 ];
 
 const BASE_URL = 'https://sparky-cape-store.vercel.app/api';
@@ -624,27 +625,33 @@ function renderGrid() {
     return;
   }
 
-  grid.innerHTML = filtered.map((c,i) => `
-    <div class="cape-card fade-up" style="transition-delay:${i*35}ms">
+  grid.innerHTML = filtered.map((c,i) => {
+    const isAnim = c.animated || c.type==='animated';
+    const previewId = isAnim ? `anim_${c.id}_${i}` : '';
+    const imgHtml = c.imgUrl && !c.imgUrl.startsWith('data:')
+      ? `<img class="cape-img" src="${c.imgUrl}" alt="${c.name}">`
+      : isAnim
+        ? `<canvas id="${previewId}" width="60" height="96" style="image-rendering:pixelated;width:72px;height:116px;filter:drop-shadow(0 8px 20px rgba(0,0,0,.9))"></canvas>`
+        : c.imgUrl && c.imgUrl.startsWith('data:')
+          ? `<img class="cape-img" src="${c.imgUrl}" alt="${c.name}" style="image-rendering:pixelated;">`
+          : `<div class="cape-placeholder ${c.g||'g1'}"></div>`;
+    return `
+    <div class="cape-card fade-up" style="transition-delay:${i*35}ms" data-anim-id="${previewId}">
       <div class="cape-preview">
-        ${c.type==='animated'?'<div class="anim-badge">ANIM</div>':''}
-        <div class="cape-visual">
-          ${c.imgUrl
-            ? `<img class="cape-img" src="${c.imgUrl}" alt="${c.name}">`
-            : `<div class="cape-placeholder ${c.g||'g1'}"></div>`}
-        </div>
+        ${isAnim?'<div class="anim-badge">ANIM</div>':''}
+        <div class="cape-visual">${imgHtml}</div>
       </div>
       <div class="cape-info">
         <div class="cape-name">${c.name}</div>
         <div class="cape-meta">${c.type.toUpperCase()} · ${c.author||'Community'}</div>
         <div class="cape-actions">
-          <button class="btn-equip" onclick="copyUrl('${c.id}','${c.name}','${c.type}','${c.imgUrl||''}')">
+          <button class="btn-equip" onclick="copyUrl('${c.id}','${c.name}','${c.type}')">
             ${c.type==='skin'?'Copy /xskin':'Copy URL'}
           </button>
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
   requestAnimationFrame(() => {
     grid.querySelectorAll('.fade-up').forEach(el => {
@@ -652,24 +659,50 @@ function renderGrid() {
     });
   });
 
+  // Start canvas animations for animated capes
+  startAnimatedPreviews();
+
   const total = all.filter(c => c.type !== 'skin').length;
   document.getElementById('capeCount').textContent = total + '+';
 }
 
-function copyUrl(id, name, type, imgUrl) {
-  let text;
-  if (type === 'skin') {
-    text = `/xskin ${BASE_URL}/skin/${id}`;
-  } else if (imgUrl && imgUrl.startsWith('data:')) {
-    showToast('Save the PNG and use Load Custom!');
-    return;
-  } else {
-    text = `${BASE_URL}/cape/${id}`;
-  }
+function copyUrl(id, name, type) {
+  const text = type === 'skin'
+    ? `/xskin ${BASE_URL}/skin/${id}`
+    : `${BASE_URL}/cape/${id}`;
   navigator.clipboard?.writeText(text).then(() => {
-    showToast(`✓ ${name} copied!`);
+    showToast(`✓ ${name} — URL copied!`);
   }).catch(() => {
-    showToast(`URL: ${text}`);
+    // Fallback for browsers without clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast(`✓ ${name} — URL copied!`);
+  });
+}
+
+let animIntervals = {};
+function startAnimatedPreviews() {
+  // Stop any existing intervals
+  Object.values(animIntervals).forEach(clearInterval);
+  animIntervals = {};
+
+  // Find all animated cape canvases
+  document.querySelectorAll('canvas[id^="anim_"]').forEach(canvas => {
+    if (!canvas.id) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx || typeof PIXELLAB_FRAMES === 'undefined') return;
+
+    let frame = 0;
+    const fps = 24;
+    animIntervals[canvas.id] = setInterval(() => {
+      const img = new Image();
+      img.onload = () => { ctx.clearRect(0,0,60,96); ctx.drawImage(img,0,0,60,96); };
+      img.src = PIXELLAB_FRAMES[frame];
+      frame = (frame + 1) % PIXELLAB_FRAMES.length;
+    }, 1000 / fps);
   });
 }
 
@@ -714,6 +747,8 @@ function submitUpload() {
     showToast('🎉 ' + name + ' is LIVE!');
   };
   reader.readAsDataURL(selectedFile);
+  // Note: uploaded capes use local preview only
+  // In production, these would be uploaded to server and get real URLs
 }
 
 // Toast

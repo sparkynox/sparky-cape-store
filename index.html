@@ -626,32 +626,47 @@ function renderGrid() {
   }
 
   grid.innerHTML = filtered.map((c,i) => {
-    const isAnim = c.animated || c.type==='animated';
-    const previewId = isAnim ? `anim_${c.id}_${i}` : '';
-    const imgHtml = c.imgUrl && !c.imgUrl.startsWith('data:')
-      ? `<img class="cape-img" src="${c.imgUrl}" alt="${c.name}">`
-      : isAnim
-        ? `<canvas id="${previewId}" width="60" height="96" style="image-rendering:pixelated;width:72px;height:116px;filter:drop-shadow(0 8px 20px rgba(0,0,0,.9))"></canvas>`
-        : c.imgUrl && c.imgUrl.startsWith('data:')
-          ? `<img class="cape-img" src="${c.imgUrl}" alt="${c.name}" style="image-rendering:pixelated;">`
-          : `<div class="cape-placeholder ${c.g||'g1'}"></div>`;
+    const isAnim = c.animated || c.type === 'animated';
+    const canvasId = `cape_canvas_${c.id}_${i}`;
     return `
-    <div class="cape-card fade-up" style="transition-delay:${i*35}ms" data-anim-id="${previewId}">
+    <div class="cape-card fade-up" style="transition-delay:${i*35}ms">
       <div class="cape-preview">
-        ${isAnim?'<div class="anim-badge">ANIM</div>':''}
-        <div class="cape-visual">${imgHtml}</div>
+        ${isAnim ? '<div class="anim-badge">ANIM</div>' : ''}
+        <div class="cape-visual">
+          <canvas id="${canvasId}" width="60" height="96"
+            style="image-rendering:pixelated;width:60px;height:96px;
+                   filter:drop-shadow(0 8px 24px rgba(0,0,0,.95));
+                   border-radius:3px 3px 6px 6px;"
+          ></canvas>
+        </div>
       </div>
       <div class="cape-info">
         <div class="cape-name">${c.name}</div>
-        <div class="cape-meta">${c.type.toUpperCase()} · ${c.author||'Community'}</div>
+        <div class="cape-meta">${c.type.toUpperCase()} · ${c.author || 'Community'}</div>
         <div class="cape-actions">
           <button class="btn-equip" onclick="copyUrl('${c.id}','${c.name}','${c.type}')">
-            ${c.type==='skin'?'Copy /xskin':'Copy URL'}
+            ${c.type === 'skin' ? 'Copy /xskin' : 'Copy URL'}
           </button>
         </div>
       </div>
     </div>`;
   }).join('');
+
+  // Render cape previews into each canvas
+  requestAnimationFrame(() => {
+    filtered.forEach((c, i) => {
+      const canvas = document.getElementById(`cape_canvas_${c.id}_${i}`);
+      if (!canvas) return;
+      const isAnim = c.animated || c.type === 'animated';
+      if (isAnim) {
+        startAnimCanvas(canvas, c.id);
+      } else if (c.imgUrl) {
+        renderCapeCanvas(canvas, c.imgUrl);
+      } else {
+        renderGradientCape(canvas, c.g || 'g1');
+      }
+    });
+  });
 
   requestAnimationFrame(() => {
     grid.querySelectorAll('.fade-up').forEach(el => {
@@ -684,27 +699,81 @@ function copyUrl(id, name, type) {
 }
 
 let animIntervals = {};
-function startAnimatedPreviews() {
-  // Stop any existing intervals
-  Object.values(animIntervals).forEach(clearInterval);
-  animIntervals = {};
 
-  // Find all animated cape canvases
-  document.querySelectorAll('canvas[id^="anim_"]').forEach(canvas => {
-    if (!canvas.id) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx || typeof PIXELLAB_FRAMES === 'undefined') return;
-
-    let frame = 0;
-    const fps = 24;
-    animIntervals[canvas.id] = setInterval(() => {
-      const img = new Image();
-      img.onload = () => { ctx.clearRect(0,0,60,96); ctx.drawImage(img,0,0,60,96); };
-      img.src = PIXELLAB_FRAMES[frame];
-      frame = (frame + 1) % PIXELLAB_FRAMES.length;
-    }, 1000 / fps);
+/** Start animated playback on a canvas using PIXELLAB_FRAMES */
+function startAnimCanvas(canvas, id) {
+  if (animIntervals[canvas.id]) clearInterval(animIntervals[canvas.id]);
+  if (typeof PIXELLAB_FRAMES === 'undefined' || !PIXELLAB_FRAMES.length) return;
+  const ctx = canvas.getContext('2d');
+  let frame = 0;
+  const imgs = PIXELLAB_FRAMES.map(src => {
+    const img = new Image(); img.src = src; return img;
   });
+  animIntervals[canvas.id] = setInterval(() => {
+    const img = imgs[frame];
+    if (img.complete) { ctx.clearRect(0,0,60,96); ctx.drawImage(img,0,0,60,96); }
+    frame = (frame + 1) % imgs.length;
+  }, 1000 / 24);
 }
+
+/**
+ * Render front face of a cape texture onto canvas.
+ * Works for ANY 64x32 PNG — auto crops front face at x=1,y=1 w=10 h=16.
+ * Also supports skin 64x64.
+ */
+function renderCapeCanvas(canvas, imgSrc) {
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.onload = () => {
+    ctx.clearRect(0, 0, 60, 96);
+    ctx.imageSmoothingEnabled = false;
+    if (img.height === img.width) {
+      // Skin — show face area (8x8 at 8,8 in 64x64)
+      ctx.drawImage(img, 8, 8, 8, 8, 10, 4, 40, 40);
+    } else {
+      // Cape — front face: x=1,y=1 w=10 h=16 in 64x32 sheet
+      ctx.drawImage(img, 1, 1, 10, 16, 0, 0, 60, 96);
+    }
+  };
+  img.crossOrigin = 'anonymous';
+  img.src = imgSrc;
+}
+
+/** Fallback gradient cape shape for capes without PNG yet */
+function renderGradientCape(canvas, gradClass) {
+  const ctx = canvas.getContext('2d');
+  const gradMap = {
+    g1: ['#FF0033','#FF69B4'], g2: ['#00CCFF','#0066FF'],
+    g3: ['#FFD700','#FF8C00'], g4: ['#00FF88','#00CC66'],
+    g5: ['#BB00FF','#FF00AA'], g6: ['#FF4500','#FF0033'],
+    g7: ['#00FFFF','#FF00FF'], g8: ['#FFFFFF','#888888'],
+    ga: ['#FF0033','#FF69B4'],
+  };
+  const colors = gradMap[gradClass] || gradMap.g1;
+  const grad = ctx.createLinearGradient(0, 0, 0, 96);
+  grad.addColorStop(0, colors[0]);
+  grad.addColorStop(1, colors[1]);
+  ctx.fillStyle = grad;
+  // Cape shape: slightly narrower at top
+  ctx.beginPath();
+  ctx.moveTo(4, 0); ctx.lineTo(56, 0);
+  ctx.lineTo(60, 96); ctx.lineTo(0, 96);
+  ctx.closePath();
+  ctx.fill();
+  // Subtle shine
+  const shine = ctx.createLinearGradient(0, 0, 60, 0);
+  shine.addColorStop(0, 'rgba(255,255,255,0.15)');
+  shine.addColorStop(0.5, 'rgba(255,255,255,0.05)');
+  shine.addColorStop(1, 'rgba(0,0,0,0.2)');
+  ctx.fillStyle = shine;
+  ctx.beginPath();
+  ctx.moveTo(4, 0); ctx.lineTo(56, 0);
+  ctx.lineTo(60, 96); ctx.lineTo(0, 96);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function startAnimatedPreviews() {} // legacy stub
 
 // Upload modal
 function openModal() { document.getElementById('uploadModal').classList.add('active'); }
@@ -744,7 +813,7 @@ function submitUpload() {
     saveUpload({ id:'u_'+Date.now(), name, type, author, imgUrl:e.target.result, uploadedAt:new Date().toISOString() });
     closeModal();
     renderGrid();
-    showToast('🎉 ' + name + ' is LIVE!');
+    showToast('\uD83C\uDF89 ' + name + ' is LIVE!');
   };
   reader.readAsDataURL(selectedFile);
   // Note: uploaded capes use local preview only
@@ -781,6 +850,14 @@ document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
 document.getElementById('uploadModal').addEventListener('click', e => {
   if(e.target.id==='uploadModal') closeModal();
 });
+
+// Clear old broken uploads (MDR etc from previous version)
+(function() {
+  try {
+    const old = JSON.parse(localStorage.getItem('scs_uploads') || '[]');
+    if (old.length) { localStorage.removeItem('scs_uploads'); }
+  } catch(e) {}
+})();
 
 // Init
 renderGrid();

@@ -1,1 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GIF → Cape Frames | Sparky Cape Store</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<!-- gif.js for encoding, omggif for decoding -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{--red:#FF0033;--pink:#FF69B4;--black:#000;--card:#0F0F0F;--border:#1A1A1A;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--black);color:#fff;font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden;}
 
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 30%,rgba(255,0,51,.06),transparent 50%),radial-gradient(ellipse at 80% 70%,rgba(255,105,180,.06),transparent 50%);pointer-events:none;z-index:0;}
+  body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,0,51,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,0,51,.02) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:0;}
+
+  nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:60px;background:rgba(0,0,0,.9);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,0,51,.12);}
+  .nav-logo{font-family:'Orbitron',monospace;font-size:15px;font-weight:900;background:linear-gradient(135deg,var(--red),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px;text-decoration:none;}
+  .nav-back{color:rgba(255,255,255,.4);font-size:13px;letter-spacing:1px;text-decoration:none;transition:color .3s;}
+  .nav-back:hover{color:var(--pink);}
+
+  main{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:48px 24px 80px;}
+
+  .hero{text-align:center;margin-bottom:48px;}
+  .hero-tag{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--red);margin-bottom:10px;display:block;}
+  .hero-title{font-family:'Orbitron',monospace;font-size:clamp(24px,5vw,48px);font-weight:900;line-height:1;margin-bottom:12px;}
+  .hero-title span{background:linear-gradient(135deg,var(--red),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .hero-desc{color:rgba(255,255,255,.4);font-size:15px;line-height:1.6;max-width:500px;margin:0 auto;}
+  .divider{width:50px;height:2px;background:linear-gradient(90deg,var(--red),var(--pink));margin:16px auto;border-radius:2px;}
+
+  /* Upload zone */
+  .upload-zone{
+    border:2px dashed rgba(255,0,51,.25);border-radius:16px;
+    padding:56px 32px;text-align:center;cursor:pointer;transition:all .3s;
+    position:relative;overflow:hidden;margin-bottom:32px;
+    background:rgba(255,255,255,.01);
+  }
+  .upload-zone:hover,.upload-zone.drag{border-color:var(--red);background:rgba(255,0,51,.03);box-shadow:0 0 40px rgba(255,0,51,.08);}
+  .upload-zone input{display:none;}
+  .upload-icon{font-size:48px;display:block;margin-bottom:12px;animation:bounce 2s ease-in-out infinite;}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  .upload-title{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;margin-bottom:8px;}
+  .upload-hint{color:rgba(255,255,255,.35);font-size:14px;line-height:1.6;}
+  .upload-specs{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:16px;}
+  .spec{border:1px solid rgba(255,105,180,.3);color:var(--pink);padding:4px 12px;border-radius:100px;font-size:11px;font-weight:600;letter-spacing:1px;}
+
+  /* Settings panel */
+  .settings{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:32px;display:none;}
+  .settings.show{display:block;}
+  .settings-title{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;margin-bottom:20px;color:rgba(255,255,255,.8);letter-spacing:1px;}
+
+  .settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;}
+  .setting-group label{display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px;font-weight:600;}
+
+  .preset-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+  .preset-btn{padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:transparent;color:rgba(255,255,255,.5);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all .3s;}
+  .preset-btn.active,.preset-btn:hover{background:linear-gradient(135deg,var(--red),var(--pink));color:white;border-color:transparent;}
+
+  .input-row{display:flex;gap:8px;align-items:center;}
+  .num-input{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:white;font-family:'Rajdhani',sans-serif;font-size:14px;width:80px;outline:none;transition:all .3s;text-align:center;}
+  .num-input:focus{border-color:var(--red);}
+  .input-sep{color:rgba(255,255,255,.3);font-size:16px;}
+
+  .range-wrap{display:flex;align-items:center;gap:10px;}
+  input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--red),var(--pink));outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:white;cursor:pointer;box-shadow:0 0 8px rgba(255,0,51,.5);}
+  .range-val{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:var(--pink);min-width:40px;text-align:right;}
+
+  select.form-select{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:white;font-family:'Rajdhani',sans-serif;font-size:14px;width:100%;outline:none;transition:all .3s;cursor:pointer;}
+  select.form-select:focus{border-color:var(--red);}
+  select.form-select option{background:#111;}
+
+  /* Progress */
+  .progress-wrap{display:none;margin-bottom:24px;}
+  .progress-wrap.show{display:block;}
+  .progress-label{font-size:13px;letter-spacing:1px;color:rgba(255,255,255,.5);margin-bottom:8px;display:flex;justify-content:space-between;}
+  .progress-bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--pink));border-radius:2px;transition:width .2s;width:0%;}
+  .progress-status{font-size:12px;color:rgba(255,255,255,.4);margin-top:6px;letter-spacing:1px;}
+
+  /* Preview grid */
+  .preview-section{display:none;}
+  .preview-section.show{display:block;}
+  .preview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+  .preview-info{font-size:14px;color:rgba(255,255,255,.5);letter-spacing:1px;}
+  .preview-info strong{color:var(--pink);font-family:'Orbitron',monospace;}
+
+  .preview-actions{display:flex;gap:10px;flex-wrap:wrap;}
+
+  .btn-primary{background:linear-gradient(135deg,var(--red),var(--pink));color:white;padding:12px 28px;border:none;border-radius:6px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;}
+  .btn-primary::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(255,255,255,.15),transparent);transform:translateX(-100%);transition:transform .4s;}
+  .btn-primary:hover::before{transform:translateX(100%);}
+  .btn-primary:hover{box-shadow:0 0 24px rgba(255,0,51,.5);transform:translateY(-1px);}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+  .btn-secondary{background:transparent;color:rgba(255,255,255,.6);padding:12px 24px;border:1px solid var(--border);border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all .3s;}
+  .btn-secondary:hover{border-color:var(--pink);color:var(--pink);}
+
+  .frames-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;max-height:400px;overflow-y:auto;padding-right:4px;}
+  .frames-grid::-webkit-scrollbar{width:3px;}
+  .frames-grid::-webkit-scrollbar-thumb{background:linear-gradient(var(--red),var(--pink));border-radius:2px;}
+
+  .frame-item{background:#0A0A14;border:1px solid var(--border);border-radius:8px;overflow:hidden;position:relative;cursor:pointer;transition:all .3s;}
+  .frame-item:hover{border-color:rgba(255,0,51,.4);transform:scale(1.05);}
+  .frame-item canvas{display:block;width:100%;image-rendering:pixelated;}
+  .frame-num{position:absolute;bottom:3px;right:4px;font-size:9px;font-weight:700;color:rgba(255,255,255,.4);font-family:'Orbitron',monospace;}
+
+  /* Playback preview */
+  .playback{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+  .playback-canvas-wrap{
+    width:64px;height:128px;background:#0A0A14;border-radius:4px 4px 8px 8px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 8px 24px rgba(0,0,0,.8);flex-shrink:0;
+    animation:float 3s ease-in-out infinite;
+  }
+  @keyframes float{0%,100%{transform:translateY(0) rotateY(-6deg)}50%{transform:translateY(-6px) rotateY(6deg)}}
+  #playbackCanvas{image-rendering:pixelated;width:64px;height:128px;}
+  .playback-info{flex:1;}
+  .playback-title{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;margin-bottom:8px;}
+  .playback-meta{color:rgba(255,255,255,.4);font-size:13px;line-height:1.8;}
+  .playback-meta span{color:var(--pink);}
+
+  .playback-controls{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .ctrl-btn{padding:6px 16px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;color:rgba(255,255,255,.6);font-size:13px;font-weight:600;cursor:pointer;transition:all .3s;font-family:'Rajdhani',sans-serif;letter-spacing:1px;}
+  .ctrl-btn:hover,.ctrl-btn.active{background:rgba(255,0,51,.15);border-color:rgba(255,0,51,.3);color:var(--pink);}
+
+  /* Toast */
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:linear-gradient(135deg,var(--red),var(--pink));color:white;padding:12px 24px;border-radius:100px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;z-index:9999;transition:transform .4s cubic-bezier(.175,.885,.32,1.275);}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  @media(max-width:600px){
+    main{padding:32px 16px 60px;}
+    .playback{flex-direction:column;text-align:center;}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">SPARKY CAPE STORE</a>
+  <a href="/" class="nav-back">← Back to Store</a>
+</nav>
+
+<main>
+  <!-- Hero -->
+  <div class="hero">
+    <span class="hero-tag">✦ Tool</span>
+    <h1 class="hero-title">GIF → Cape <span>Frames</span></h1>
+    <div class="divider"></div>
+    <p class="hero-desc">Upload any GIF — automatically extracts all frames, resizes to your target resolution, and exports as numbered PNGs ready for the mod.</p>
+  </div>
+
+  <!-- Upload zone -->
+  <div class="upload-zone" id="dropZone" onclick="document.getElementById('gifInput').click()">
+    <input type="file" id="gifInput" accept=".gif,image/gif">
+    <span class="upload-icon">🎞️</span>
+    <div class="upload-title">Drop your GIF here</div>
+    <p class="upload-hint">Or click to browse. Any size GIF supported.<br>Frames will be extracted and resized automatically.</p>
+    <div class="upload-specs">
+      <span class="spec">GIF only</span>
+      <span class="spec">Any size</span>
+      <span class="spec">Any frame count</span>
+      <span class="spec">Auto resize</span>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="settings" id="settings">
+    <div class="settings-title">⚙ Output Settings</div>
+    <div class="settings-grid">
+
+      <div class="setting-group">
+        <label>Output Resolution</label>
+        <div class="preset-btns" id="presetBtns">
+          <button class="preset-btn active" onclick="setPreset(64,32,this)">64×32</button>
+          <button class="preset-btn" onclick="setPreset(128,64,this)">128×64</button>
+          <button class="preset-btn" onclick="setPreset(256,128,this)">256×128</button>
+          <button class="preset-btn" onclick="setPreset(512,256,this)">512×256</button>
+          <button class="preset-btn" onclick="setPreset(0,0,this)">Custom</button>
+        </div>
+        <div class="input-row">
+          <input class="num-input" type="number" id="outW" value="64" min="8" max="2048">
+          <span class="input-sep">×</span>
+          <input class="num-input" type="number" id="outH" value="32" min="8" max="2048">
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label>Frame Limit <span style="color:rgba(255,255,255,.3);font-size:10px">(0 = all)</span></label>
+        <div class="range-wrap">
+          <input type="range" id="frameLimit" min="0" max="300" value="0" oninput="document.getElementById('frameLimitVal').textContent=this.value==0?'All':this.value">
+          <span class="range-val" id="frameLimitVal">All</span>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label>Resize Method</label>
+        <select class="form-select" id="resizeMethod">
+          <option value="pixelated">Pixelated (sharp)</option>
+          <option value="smooth" selected>Smooth (high quality)</option>
+          <option value="nearest">Nearest neighbor</option>
+        </select>
+      </div>
+
+      <div class="setting-group">
+        <label>Frame Naming</label>
+        <select class="form-select" id="namingScheme">
+          <option value="frame">frame1.png, frame2.png...</option>
+          <option value="index">0.png, 1.png, 2.png...</option>
+          <option value="padded">frame_001.png, frame_002.png...</option>
+        </select>
+      </div>
+
+    </div>
+
+    <div style="margin-top:20px;">
+      <button class="btn-primary" id="processBtn" onclick="processGif()">
+        Extract Frames →
+      </button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label">
+      <span>Processing GIF...</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-status" id="progressStatus">Reading GIF data...</div>
+  </div>
+
+  <!-- Preview section -->
+  <div class="preview-section" id="previewSection">
+
+    <!-- Animated playback preview -->
+    <div class="playback" id="playbackWrap">
+      <div class="playback-canvas-wrap">
+        <canvas id="playbackCanvas" width="64" height="128"></canvas>
+      </div>
+      <div class="playback-info">
+        <div class="playback-title">Live Preview</div>
+        <div class="playback-meta">
+          Frames: <span id="infoFrames">—</span><br>
+          Resolution: <span id="infoRes">—</span><br>
+          FPS: <span id="infoFps">24</span>
+        </div>
+        <div class="playback-controls">
+          <button class="ctrl-btn active" id="playBtn" onclick="togglePlay()">⏸ Pause</button>
+          <button class="ctrl-btn" onclick="changeFps(8)">8 FPS</button>
+          <button class="ctrl-btn" onclick="changeFps(16)">16 FPS</button>
+          <button class="ctrl-btn" onclick="changeFps(24)">24 FPS</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-header">
+      <div class="preview-info">
+        <strong id="frameCountLabel">0</strong> frames extracted
+      </div>
+      <div class="preview-actions">
+        <button class="btn-secondary" onclick="resetTool()">↺ New GIF</button>
+        <button class="btn-primary" id="downloadBtn" onclick="downloadZip()">
+          ⬇ Download ZIP
+        </button>
+      </div>
+    </div>
+
+    <div class="frames-grid" id="framesGrid"></div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<!-- omggif for GIF decoding -->
+<script>
+// Minimal GIF decoder (omggif inline)
+var GifReader=function(a){this._bytes=a;var b=0;if(71!==a[b++]||73!==a[b++]||70!==a[b++]||56!==a[b++]||a[b++]!==57&&a[b++-1]!==55||97!==a[b++])throw new Error("Invalid GIF 87a/89a header.");var c=a[b++]|a[b++]<<8;var d=a[b++]|a[b++]<<8;var e=a[b++];var f=a[b++];a[b++];var g=(e>>4&7)+1;var h=0;e>>7&&(h=3*(1<<g),b+=h);this._globalColorTableFlag=e>>7&1;this._globalColorCount=1<<g;this._globalColorTable=e>>7?a.subarray(b-h,b):null;this._loopCount=0;this._frames=[];this._netscape=false;var i=this;this._parseBlock=function(j){if(b>=a.length)return;var k=a[b++];if(59===k)return;if(44===k){var l=a[b++]|a[b++]<<8;var m=a[b++]|a[b++]<<8;var n=a[b++]|a[b++]<<8;var o=a[b++]|a[b++]<<8;var p=a[b++];var q=(p>>4&7)+1;var r=p>>6&1;var s=p>>7&1;var t=0;s&&(t=3*(1<<q),b+=t);var u={x:l,y:m,width:n,height:o,has_local_palette:s,palette_offset:s?b-t:0,palette_size:s?1<<q:i._globalColorCount,data_offset:0,data_length:0,transparent_index:null,interlaced:!!r,delay:0,disposal:0};i._frames.push(u);u.data_offset=b;b++;var v=0;do{var w=a[b++];v+=w+1;b+=w;}while(0!==w);u.data_length=b-u.data_offset;setTimeout(function(){i._parseBlock();},0);}else if(33===k){var x=a[b++];if(249===x){b++;var y=a[b++];var z=a[b++];a[b++];b++;if(i._frames.length>0){var A=i._frames[i._frames.length-1];A.delay=(y|z<<8)*10;A.disposal=z>>2&7;if(z&1)A.transparent_index=a[b-2];}}else if(255===x){b+=12;var B=0;do{B=a[b++];b+=B;}while(0!==B);}else{var C=0;do{C=a[b++];b+=C;}while(0!==C);}setTimeout(function(){i._parseBlock();},0);}else{throw new Error("Unknown block 0x"+k.toString(16)+" at offset "+(b-1));}};};
+</script>
+
+<script>
+let gifFrames = [];
+let processedCanvases = [];
+let playInterval = null;
+let playFps = 24;
+let playFrame = 0;
+let isPlaying = true;
+let currentGifName = 'cape';
+
+// ── Drag & Drop ───────────────────────────────────────────────────────────────
+const dropZone = document.getElementById('dropZone');
+const gifInput = document.getElementById('gifInput');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type === 'image/gif') loadGif(file);
+  else showToast('GIF files only!');
+});
+gifInput.addEventListener('change', e => {
+  if (e.target.files[0]) loadGif(e.target.files[0]);
+});
+
+// ── Load GIF ──────────────────────────────────────────────────────────────────
+function loadGif(file) {
+  currentGifName = file.name.replace('.gif','').replace(/[^a-zA-Z0-9_-]/g,'_');
+  const reader = new FileReader();
+  reader.onload = e => {
+    const bytes = new Uint8Array(e.target.result);
+    parseGif(bytes);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseGif(bytes) {
+  // Manual GIF frame parser
+  gifFrames = [];
+
+  // Check header
+  const sig = String.fromCharCode(bytes[0],bytes[1],bytes[2]);
+  if (sig !== 'GIF') { showToast('Invalid GIF file!'); return; }
+
+  let pos = 6; // skip header
+  const screenW = bytes[pos] | bytes[pos+1]<<8; pos+=2;
+  const screenH = bytes[pos] | bytes[pos+1]<<8; pos+=2;
+  const flags = bytes[pos++];
+  pos++; // background color index
+  pos++; // pixel aspect ratio
+
+  const hasGCT = (flags >> 7) & 1;
+  const gctSize = 3 * (2 << (flags & 0x7));
+  let globalPalette = null;
+  if (hasGCT) {
+    globalPalette = bytes.subarray(pos, pos + gctSize);
+    pos += gctSize;
+  }
+
+  let delay = 100;
+  let transparentIdx = -1;
+  let disposal = 0;
+  let prevCanvas = null;
+
+  const masterCanvas = document.createElement('canvas');
+  masterCanvas.width = screenW; masterCanvas.height = screenH;
+  const masterCtx = masterCanvas.getContext('2d');
+
+  while (pos < bytes.length) {
+    const block = bytes[pos++];
+
+    if (block === 0x3B) break; // trailer
+
+    if (block === 0x21) { // extension
+      const label = bytes[pos++];
+      if (label === 0xF9) { // graphic control
+        pos++; // block size
+        const ef = bytes[pos++];
+        delay = (bytes[pos] | bytes[pos+1]<<8) * 10; pos+=2;
+        transparentIdx = (ef & 1) ? bytes[pos] : -1; pos++;
+        disposal = (ef >> 2) & 7;
+        pos++; // block terminator
+      } else {
+        // skip
+        let bsize;
+        do { bsize = bytes[pos++]; pos += bsize; } while (bsize !== 0);
+      }
+      continue;
+    }
+
+    if (block === 0x2C) { // image descriptor
+      const fx = bytes[pos]|bytes[pos+1]<<8; pos+=2;
+      const fy = bytes[pos]|bytes[pos+1]<<8; pos+=2;
+      const fw = bytes[pos]|bytes[pos+1]<<8; pos+=2;
+      const fh = bytes[pos]|bytes[pos+1]<<8; pos+=2;
+      const iflags = bytes[pos++];
+      const hasLCT = (iflags >> 7) & 1;
+      const interlaced = (iflags >> 6) & 1;
+      const lctSize = 3 * (2 << (iflags & 0x7));
+      let palette = globalPalette;
+      if (hasLCT) { palette = bytes.subarray(pos, pos+lctSize); pos+=lctSize; }
+
+      // Decode LZW
+      const minCode = bytes[pos++];
+      let data = [];
+      let bsize;
+      do { bsize = bytes[pos++]; for(let i=0;i<bsize;i++) data.push(bytes[pos++]); } while(bsize!==0);
+
+      const pixels = lzwDecode(minCode, new Uint8Array(data));
+
+      // Draw frame
+      if (disposal === 2) masterCtx.clearRect(fx, fy, fw, fh);
+      else if (disposal === 3 && prevCanvas) masterCtx.drawImage(prevCanvas, 0, 0);
+
+      const imgData = masterCtx.createImageData(fw, fh);
+      const d = imgData.data;
+
+      // Deinterlace if needed
+      let rows = [];
+      if (interlaced) {
+        const passes = [[0,8],[4,8],[2,4],[1,2]];
+        let row = 0;
+        for(const [start,step] of passes) for(let y=start;y<fh;y+=step) rows[y]=row++;
+      }
+
+      for(let y=0;y<fh;y++) {
+        const srcRow = interlaced ? rows[y] : y;
+        for(let x=0;x<fw;x++) {
+          const pi = pixels[srcRow*fw+x];
+          const di = (y*fw+x)*4;
+          if(pi === transparentIdx) { d[di+3]=0; continue; }
+          const ci = pi*3;
+          d[di]=palette[ci]; d[di+1]=palette[ci+1]; d[di+2]=palette[ci+2]; d[di+3]=255;
+        }
+      }
+
+      masterCtx.putImageData(imgData, fx, fy);
+
+      // Save frame snapshot
+      const snap = document.createElement('canvas');
+      snap.width=screenW; snap.height=screenH;
+      snap.getContext('2d').drawImage(masterCanvas,0,0);
+      gifFrames.push({ canvas:snap, delay:delay||100 });
+
+      prevCanvas = disposal===3 ? snap : null;
+      transparentIdx=-1; delay=100; disposal=0;
+      continue;
+    }
+  }
+
+  if (gifFrames.length === 0) { showToast('No frames found in GIF!'); return; }
+
+  document.getElementById('settings').classList.add('show');
+  showToast(`✓ ${gifFrames.length} frames loaded from GIF!`);
+}
+
+// LZW decoder
+function lzwDecode(minCodeSize, data) {
+  const clearCode = 1 << minCodeSize;
+  const eofCode = clearCode + 1;
+  let codeSize = minCodeSize + 1;
+  let codeMask = (1 << codeSize) - 1;
+  let dict = [];
+  const resetDict = () => {
+    dict = [];
+    for(let i=0;i<clearCode;i++) dict[i]=[i];
+    dict[clearCode]=[]; dict[eofCode]=[];
+    codeSize=minCodeSize+1; codeMask=(1<<codeSize)-1;
+  };
+  resetDict();
+  let bits=0,bitBuf=0,pos=0;
+  const readCode = () => {
+    while(bits<codeSize && pos<data.length) { bitBuf|=data[pos++]<<bits; bits+=8; }
+    const c=bitBuf&codeMask; bitBuf>>=codeSize; bits-=codeSize; return c;
+  };
+  let out=[]; let prev=null;
+  while(true) {
+    const code=readCode();
+    if(code===eofCode) break;
+    if(code===clearCode) { resetDict(); prev=null; continue; }
+    let entry;
+    if(code<dict.length) entry=dict[code];
+    else if(code===dict.length&&prev) entry=[...prev,prev[0]];
+    else break;
+    out.push(...entry);
+    if(prev) {
+      dict.push([...prev,entry[0]]);
+      if(dict.length>(1<<codeSize)&&codeSize<12) { codeSize++; codeMask=(1<<codeSize)-1; }
+    }
+    prev=entry;
+  }
+  return out;
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+function setPreset(w, h, btn) {
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(w>0) { document.getElementById('outW').value=w; document.getElementById('outH').value=h; }
+}
+
+document.getElementById('outW').addEventListener('input', () => {
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.preset-btn:last-child').classList.add('active');
+});
+document.getElementById('outH').addEventListener('input', () => {
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.preset-btn:last-child').classList.add('active');
+});
+
+// ── Process ───────────────────────────────────────────────────────────────────
+async function processGif() {
+  if(!gifFrames.length) { showToast('Load a GIF first!'); return; }
+
+  const outW = parseInt(document.getElementById('outW').value) || 64;
+  const outH = parseInt(document.getElementById('outH').value) || 32;
+  const limit = parseInt(document.getElementById('frameLimit').value) || 0;
+  const smooth = document.getElementById('resizeMethod').value !== 'pixelated';
+
+  const frames = limit > 0 ? gifFrames.slice(0, limit) : gifFrames;
+  processedCanvases = [];
+
+  document.getElementById('progressWrap').classList.add('show');
+  document.getElementById('settings').style.pointerEvents='none';
+  document.getElementById('processBtn').disabled=true;
+
+  for(let i=0;i<frames.length;i++) {
+    const pct = Math.round((i+1)/frames.length*100);
+    document.getElementById('progressFill').style.width=pct+'%';
+    document.getElementById('progressPct').textContent=pct+'%';
+    document.getElementById('progressStatus').textContent=`Frame ${i+1} of ${frames.length}...`;
+
+    const c = document.createElement('canvas');
+    c.width=outW; c.height=outH;
+    const ctx=c.getContext('2d');
+    ctx.imageSmoothingEnabled=smooth;
+    ctx.imageSmoothingQuality='high';
+    ctx.drawImage(frames[i].canvas, 0, 0, outW, outH);
+    processedCanvases.push(c);
+
+    // Yield to avoid blocking UI
+    if(i%5===0) await new Promise(r=>setTimeout(r,0));
+  }
+
+  document.getElementById('progressStatus').textContent='Done!';
+  document.getElementById('settings').style.pointerEvents='';
+  document.getElementById('processBtn').disabled=false;
+
+  showResults(outW, outH);
+}
+
+function showResults(outW, outH) {
+  const n = processedCanvases.length;
+  document.getElementById('previewSection').classList.add('show');
+  document.getElementById('frameCountLabel').textContent=n;
+
+  // Setup playback
+  const pb = document.getElementById('playbackCanvas');
+  pb.width=outW; pb.height=outH;
+  pb.style.width='64px'; pb.style.height=Math.round(64*outH/outW)+'px';
+
+  document.getElementById('infoFrames').textContent=n;
+  document.getElementById('infoRes').textContent=outW+'×'+outH;
+  startPlayback();
+
+  // Render thumbnails
+  const grid = document.getElementById('framesGrid');
+  grid.innerHTML='';
+  processedCanvases.forEach((c,i) => {
+    const wrap=document.createElement('div');
+    wrap.className='frame-item';
+    const thumb=document.createElement('canvas');
+    thumb.width=c.width; thumb.height=c.height;
+    thumb.getContext('2d').drawImage(c,0,0);
+    const num=document.createElement('div');
+    num.className='frame-num';
+    num.textContent=i+1;
+    wrap.appendChild(thumb); wrap.appendChild(num);
+    grid.appendChild(wrap);
+  });
+
+  showToast(`✓ ${n} frames ready!`);
+}
+
+// ── Playback ──────────────────────────────────────────────────────────────────
+function startPlayback() {
+  if(playInterval) clearInterval(playInterval);
+  playFrame=0; isPlaying=true;
+  document.getElementById('playBtn').textContent='⏸ Pause';
+  document.getElementById('playBtn').classList.add('active');
+  playInterval=setInterval(()=>{
+    if(!processedCanvases.length) return;
+    const pb=document.getElementById('playbackCanvas');
+    const ctx=pb.getContext('2d');
+    ctx.clearRect(0,0,pb.width,pb.height);
+    ctx.drawImage(processedCanvases[playFrame],0,0);
+    playFrame=(playFrame+1)%processedCanvases.length;
+  }, 1000/playFps);
+}
+
+function togglePlay() {
+  if(isPlaying) {
+    clearInterval(playInterval); isPlaying=false;
+    document.getElementById('playBtn').textContent='▶ Play';
+    document.getElementById('playBtn').classList.remove('active');
+  } else {
+    startPlayback();
+  }
+}
+
+function changeFps(fps) {
+  playFps=fps;
+  document.getElementById('infoFps').textContent=fps;
+  if(isPlaying) startPlayback();
+}
+
+// ── Download ZIP ──────────────────────────────────────────────────────────────
+async function downloadZip() {
+  if(!processedCanvases.length) return;
+  const btn=document.getElementById('downloadBtn');
+  btn.disabled=true; btn.textContent='Zipping...';
+
+  const naming=document.getElementById('namingScheme').value;
+  const zip=new JSZip();
+  const folder=zip.folder(currentGifName+'_frames');
+
+  for(let i=0;i<processedCanvases.length;i++) {
+    let name;
+    const n=i+1;
+    if(naming==='frame') name=`frame${n}.png`;
+    else if(naming==='index') name=`${i}.png`;
+    else name=`frame_${String(n).padStart(3,'0')}.png`;
+
+    const blob=await new Promise(r=>processedCanvases[i].toBlob(r,'image/png'));
+    const ab=await blob.arrayBuffer();
+    folder.file(name, ab);
+
+    if(i%10===0) {
+      btn.textContent=`Zipping ${i+1}/${processedCanvases.length}...`;
+      await new Promise(r=>setTimeout(r,0));
+    }
+  }
+
+  const content=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+  const url=URL.createObjectURL(content);
+  const a=document.createElement('a'); a.href=url;
+  a.download=currentGifName+'_frames.zip'; a.click();
+  URL.revokeObjectURL(url);
+
+  btn.disabled=false; btn.textContent='⬇ Download ZIP';
+  showToast('Downloaded!');
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+function resetTool() {
+  gifFrames=[]; processedCanvases=[];
+  if(playInterval) clearInterval(playInterval);
+  document.getElementById('settings').classList.remove('show');
+  document.getElementById('progressWrap').classList.remove('show');
+  document.getElementById('previewSection').classList.remove('show');
+  document.getElementById('progressFill').style.width='0%';
+  document.getElementById('framesGrid').innerHTML='';
+  document.getElementById('gifInput').value='';
+  showToast('Ready for new GIF!');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sparky Cape Store</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #FF0033;
+    --pink: #FF69B4;
+    --white: #FFFFFF;
+    --black: #000000;
+    --dark: #0A0A0A;
+    --card: #0F0F0F;
+    --border: #1A1A1A;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Rajdhani', sans-serif;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 15% 15%, rgba(255,0,51,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 85%, rgba(255,105,180,0.07) 0%, transparent 50%);
+    animation: bgPulse 8s ease-in-out infinite alternate;
+    pointer-events: none; z-index: 0;
+  }
+  @keyframes bgPulse { 0%{opacity:.5;} 100%{opacity:1;} }
+
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,0,51,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,0,51,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* Particles */
+  #particles { position:fixed; inset:0; pointer-events:none; z-index:1; overflow:hidden; }
+  .particle {
+    position:absolute; border-radius:50%;
+    animation: floatUp linear infinite;
+  }
+  @keyframes floatUp {
+    0%   { transform:translateY(100vh) translateX(0); opacity:0; }
+    10%  { opacity:1; }
+    90%  { opacity:1; }
+    100% { transform:translateY(-10vh) translateX(var(--drift)); opacity:0; }
+  }
+
+  /* Navbar */
+  nav {
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 40px; height:64px;
+    background:rgba(0,0,0,0.88);
+    backdrop-filter:blur(20px);
+    border-bottom:1px solid rgba(255,0,51,0.15);
+  }
+  .nav-logo {
+    font-family:'Orbitron',monospace; font-weight:900; font-size:18px;
+    background:linear-gradient(135deg,var(--red),var(--pink));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    letter-spacing:2px;
+    animation:logoGlow 3s ease-in-out infinite alternate;
+  }
+  @keyframes logoGlow {
+    0%  { filter:drop-shadow(0 0 8px rgba(255,0,51,.8)); }
+    100%{ filter:drop-shadow(0 0 16px rgba(255,105,180,.8)); }
+  }
+  .nav-links { display:flex; gap:28px; list-style:none; }
+  .nav-links a {
+    color:rgba(255,255,255,.55); text-decoration:none;
+    font-size:13px; font-weight:600; letter-spacing:2px; text-transform:uppercase;
+    transition:all .3s; position:relative;
+  }
+  .nav-links a::after {
+    content:''; position:absolute; bottom:-4px; left:0; right:0; height:1px;
+    background:linear-gradient(90deg,var(--red),var(--pink));
+    transform:scaleX(0); transition:transform .3s;
+  }
+  .nav-links a:hover { color:var(--white); }
+  .nav-links a:hover::after { transform:scaleX(1); }
+  .nav-dl {
+    background:linear-gradient(135deg,var(--red),var(--pink)) !important;
+    -webkit-text-fill-color:white !important;
+    padding:8px 20px; border-radius:4px;
+    font-weight:700 !important; color:white !important;
+  }
+  .nav-dl::after { display:none !important; }
+  .nav-dl:hover { box-shadow:0 0 24px rgba(255,0,51,.5); transform:translateY(-1px); }
+
+  /* Hero */
+  .hero {
+    position:relative; min-height:100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:80px 20px 40px; z-index:2;
+  }
+  .hero-badge {
+    display:inline-flex; align-items:center; gap:8px;
+    border:1px solid rgba(255,0,51,.3); padding:6px 18px; border-radius:100px;
+    font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--pink);
+    margin-bottom:28px;
+    animation:badgePulse 2.5s ease-in-out infinite;
+  }
+  @keyframes badgePulse {
+    0%,100%{ border-color:rgba(255,0,51,.3); }
+    50%    { border-color:rgba(255,105,180,.6); box-shadow:0 0 12px rgba(255,105,180,.2); }
+  }
+  .hero-badge::before {
+    content:''; width:6px; height:6px; background:var(--red); border-radius:50%;
+    animation:blink 1.5s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+  .hero-title {
+    font-family:'Orbitron',monospace;
+    font-size:clamp(40px,9vw,104px);
+    font-weight:900; line-height:.95; letter-spacing:-3px; margin-bottom:10px;
+  }
+  .line1 {
+    display:block;
+    background:linear-gradient(135deg,#fff 0%,rgba(255,255,255,.75) 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .line2 {
+    display:block;
+    background:linear-gradient(135deg,var(--red) 0%,var(--pink) 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    animation:titleGlow 3s ease-in-out infinite alternate;
+  }
+  @keyframes titleGlow {
+    0%  { filter:drop-shadow(0 0 20px rgba(255,0,51,.5)); }
+    100%{ filter:drop-shadow(0 0 40px rgba(255,105,180,.8)); }
+  }
+  .hero-sub {
+    font-size:17px; color:rgba(255,255,255,.45); letter-spacing:4px;
+    text-transform:uppercase; margin-bottom:48px; font-weight:300;
+  }
+  .hero-actions { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin-bottom:80px; }
+
+  .btn-primary {
+    background:linear-gradient(135deg,var(--red),var(--pink));
+    color:white; padding:16px 40px; border:none; border-radius:4px;
+    font-family:'Orbitron',monospace; font-size:12px; font-weight:700;
+    letter-spacing:2px; text-transform:uppercase; text-decoration:none;
+    cursor:pointer; transition:all .3s; position:relative; overflow:hidden;
+    display:inline-block;
+  }
+  .btn-primary::before {
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(135deg,transparent,rgba(255,255,255,.2),transparent);
+    transform:translateX(-100%); transition:transform .5s;
+  }
+  .btn-primary:hover::before { transform:translateX(100%); }
+  .btn-primary:hover { box-shadow:0 0 30px rgba(255,0,51,.6),0 0 60px rgba(255,105,180,.25); transform:translateY(-2px); }
+
+  .btn-secondary {
+    background:transparent; color:white; padding:16px 40px;
+    border:1px solid rgba(255,255,255,.15); border-radius:4px;
+    font-family:'Orbitron',monospace; font-size:12px; font-weight:700;
+    letter-spacing:2px; text-transform:uppercase; text-decoration:none;
+    cursor:pointer; transition:all .3s; display:inline-block;
+  }
+  .btn-secondary:hover { border-color:var(--pink); color:var(--pink); box-shadow:0 0 20px rgba(255,105,180,.2); }
+
+  .hero-stats { display:flex; gap:56px; border-top:1px solid rgba(255,255,255,.05); padding-top:40px; }
+  .stat { text-align:center; }
+  .stat-num {
+    font-family:'Orbitron',monospace; font-size:30px; font-weight:900;
+    background:linear-gradient(135deg,var(--red),var(--pink));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; display:block;
+  }
+  .stat-label { font-size:10px; letter-spacing:3px; color:rgba(255,255,255,.35); text-transform:uppercase; margin-top:4px; display:block; }
+
+  /* Section */
+  section { position:relative; z-index:2; padding:100px 40px; }
+
+  .section-header { text-align:center; margin-bottom:56px; }
+  .section-tag { font-size:11px; letter-spacing:4px; text-transform:uppercase; color:var(--red); margin-bottom:10px; display:block; }
+  .section-title { font-family:'Orbitron',monospace; font-size:clamp(22px,4vw,46px); font-weight:900; letter-spacing:-1px; margin-bottom:14px; }
+  .section-title span { background:linear-gradient(135deg,var(--red),var(--pink)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .section-desc { color:rgba(255,255,255,.4); font-size:15px; max-width:480px; margin:0 auto; line-height:1.7; }
+  .divider { width:50px; height:2px; background:linear-gradient(90deg,var(--red),var(--pink)); margin:20px auto; border-radius:2px; }
+
+  /* Category tabs */
+  .cat-tabs {
+    display:flex; justify-content:center; gap:4px; margin-bottom:44px;
+    background:rgba(255,255,255,.03); border:1px solid var(--border);
+    border-radius:8px; padding:4px; width:fit-content; margin-left:auto; margin-right:auto;
+  }
+  .cat-tab {
+    padding:9px 26px; border:none; border-radius:6px;
+    background:transparent; color:rgba(255,255,255,.4);
+    font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:600;
+    letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all .3s;
+  }
+  .cat-tab.active, .cat-tab:hover {
+    background:linear-gradient(135deg,var(--red),var(--pink)); color:white;
+  }
+
+  /* Cape Grid */
+  .cape-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+    gap:14px; max-width:1200px; margin:0 auto;
+  }
+  .cape-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:12px; overflow:hidden; cursor:pointer;
+    transition:all .4s cubic-bezier(.175,.885,.32,1.275); position:relative;
+  }
+  .cape-card::before {
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(135deg,rgba(255,0,51,.08),rgba(255,105,180,.08));
+    opacity:0; transition:opacity .3s; z-index:1; border-radius:12px;
+  }
+  .cape-card:hover { transform:translateY(-8px) scale(1.02); border-color:rgba(255,0,51,.35); box-shadow:0 20px 40px rgba(255,0,51,.18); }
+  .cape-card:hover::before { opacity:1; }
+
+  .cape-preview {
+    width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg,#0A0A0A,#111); position:relative; overflow:hidden;
+  }
+  .cape-preview::after {
+    content:''; position:absolute; bottom:0; left:0; right:0; height:35%;
+    background:linear-gradient(to top,var(--card),transparent);
+  }
+
+  .cape-visual {
+    width:72px; height:108px; position:relative;
+    animation:capeFloat 4s ease-in-out infinite;
+  }
+  @keyframes capeFloat {
+    0%,100%{ transform:translateY(0) rotateY(-8deg); }
+    50%    { transform:translateY(-8px) rotateY(8deg); }
+  }
+
+  .cape-placeholder {
+    width:72px; height:108px; border-radius:3px 3px 8px 8px;
+    filter:drop-shadow(0 8px 20px rgba(0,0,0,.9));
+  }
+  .cape-img {
+    width:100%; height:100%; object-fit:cover;
+    border-radius:3px 3px 8px 8px; image-rendering:pixelated;
+    filter:drop-shadow(0 8px 20px rgba(0,0,0,.9));
+  }
+
+  .anim-badge {
+    position:absolute; top:8px; right:8px; z-index:2;
+    background:linear-gradient(135deg,var(--red),var(--pink));
+    color:white; font-size:8px; font-weight:700; letter-spacing:1px;
+    padding:3px 8px; border-radius:100px; text-transform:uppercase;
+  }
+
+  .cape-info { padding:14px; position:relative; z-index:2; }
+  .cape-name { font-family:'Orbitron',monospace; font-size:12px; font-weight:700; color:var(--white); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cape-meta { font-size:11px; color:rgba(255,255,255,.28); letter-spacing:1px; }
+  .cape-actions { margin-top:10px; }
+  .btn-equip {
+    width:100%; padding:7px; border:none; border-radius:6px;
+    background:linear-gradient(135deg,var(--red),var(--pink)); color:white;
+    font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:700;
+    letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all .3s;
+    opacity:0; transform:translateY(4px);
+  }
+  .cape-card:hover .btn-equip { opacity:1; transform:translateY(0); }
+  .btn-equip:hover { box-shadow:0 0 16px rgba(255,0,51,.5); }
+
+  /* Upload zone */
+  .upload-zone {
+    max-width:580px; margin:0 auto;
+    border:2px dashed rgba(255,0,51,.25); border-radius:16px;
+    padding:56px 40px; text-align:center; cursor:pointer; transition:all .3s; position:relative; overflow:hidden;
+  }
+  .upload-zone::before {
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at center,rgba(255,0,51,.04),transparent 70%);
+    opacity:0; transition:opacity .3s;
+  }
+  .upload-zone:hover { border-color:var(--red); box-shadow:0 0 40px rgba(255,0,51,.1),inset 0 0 40px rgba(255,0,51,.04); }
+  .upload-zone:hover::before { opacity:1; }
+  .upload-icon { font-size:44px; margin-bottom:14px; display:block; animation:uploadBounce 2s ease-in-out infinite; }
+  @keyframes uploadBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .upload-title { font-family:'Orbitron',monospace; font-size:18px; font-weight:700; margin-bottom:8px; }
+  .upload-desc { color:rgba(255,255,255,.38); font-size:14px; line-height:1.6; margin-bottom:22px; }
+  .upload-specs { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom:28px; }
+  .spec-tag { border:1px solid rgba(255,105,180,.3); color:var(--pink); padding:4px 12px; border-radius:100px; font-size:11px; letter-spacing:1px; font-weight:600; }
+
+  /* Steps */
+  .steps-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; max-width:960px; margin:0 auto; }
+  .step-card {
+    background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:28px 20px; text-align:center; transition:all .3s; position:relative; overflow:hidden;
+  }
+  .step-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg,var(--red),var(--pink)); transform:scaleX(0); transition:transform .4s;
+  }
+  .step-card:hover::before { transform:scaleX(1); }
+  .step-card:hover { border-color:rgba(255,0,51,.25); transform:translateY(-4px); }
+  .step-num { font-family:'Orbitron',monospace; font-size:44px; font-weight:900; background:linear-gradient(135deg,rgba(255,0,51,.2),rgba(255,105,180,.2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; display:block; margin-bottom:10px; }
+  .step-title { font-family:'Orbitron',monospace; font-size:13px; font-weight:700; margin-bottom:8px; }
+  .step-desc { color:rgba(255,255,255,.38); font-size:13px; line-height:1.5; }
+
+  /* Modal */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,.92); backdrop-filter:blur(12px);
+    z-index:1000; display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .3s;
+  }
+  .modal-overlay.active { opacity:1; pointer-events:all; }
+  .modal {
+    background:var(--card); border:1px solid rgba(255,0,51,.18); border-radius:16px;
+    padding:36px; width:90%; max-width:480px; position:relative;
+    transform:translateY(20px) scale(.96); transition:all .35s cubic-bezier(.175,.885,.32,1.275);
+  }
+  .modal-overlay.active .modal { transform:translateY(0) scale(1); }
+  .modal-title { font-family:'Orbitron',monospace; font-size:18px; font-weight:700; margin-bottom:6px; background:linear-gradient(135deg,var(--red),var(--pink)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .modal-close {
+    position:absolute; top:14px; right:14px; background:none;
+    border:1px solid var(--border); color:white; width:30px; height:30px;
+    border-radius:50%; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:all .3s;
+  }
+  .modal-close:hover { border-color:var(--red); color:var(--red); }
+  .form-group { margin-bottom:18px; }
+  .form-label { display:block; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,.45); margin-bottom:7px; font-weight:600; }
+  .form-input, .form-select {
+    width:100%; background:rgba(255,255,255,.03); border:1px solid var(--border);
+    border-radius:8px; padding:11px 14px; color:white;
+    font-family:'Rajdhani',sans-serif; font-size:15px; outline:none; transition:all .3s;
+  }
+  .form-input:focus, .form-select:focus { border-color:var(--red); box-shadow:0 0 0 3px rgba(255,0,51,.1); }
+  .form-select option { background:#111; }
+  .file-drop {
+    border:2px dashed rgba(255,255,255,.1); border-radius:8px; padding:26px;
+    text-align:center; cursor:pointer; transition:all .3s;
+  }
+  .file-drop:hover, .file-drop.dragover { border-color:var(--red); background:rgba(255,0,51,.04); }
+  .file-drop input { display:none; }
+  .file-drop-text { color:rgba(255,255,255,.38); font-size:14px; }
+  .file-drop-text span { color:var(--pink); text-decoration:underline; cursor:pointer; }
+
+  /* Toast */
+  .toast {
+    position:fixed; bottom:28px; left:50%;
+    transform:translateX(-50%) translateY(100px);
+    background:linear-gradient(135deg,var(--red),var(--pink));
+    color:white; padding:13px 28px; border-radius:100px;
+    font-family:'Orbitron',monospace; font-size:11px; font-weight:700; letter-spacing:2px;
+    z-index:9999; transition:transform .4s cubic-bezier(.175,.885,.32,1.275);
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+
+  /* Footer */
+  footer { position:relative; z-index:2; border-top:1px solid var(--border); padding:40px; text-align:center; }
+  .footer-logo { font-family:'Orbitron',monospace; font-size:22px; font-weight:900; background:linear-gradient(135deg,var(--red),var(--pink)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; display:block; margin-bottom:6px; }
+  .footer-desc { color:rgba(255,255,255,.28); font-size:12px; letter-spacing:2px; margin-bottom:20px; }
+  .footer-links { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+  .footer-links a { color:rgba(255,255,255,.28); text-decoration:none; font-size:12px; letter-spacing:1px; transition:color .3s; }
+  .footer-links a:hover { color:var(--pink); }
+  .footer-copy { margin-top:20px; color:rgba(255,255,255,.13); font-size:11px; }
+
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background:#000; }
+  ::-webkit-scrollbar-thumb { background:linear-gradient(var(--red),var(--pink)); border-radius:2px; }
+
+  .fade-up { opacity:0; transform:translateY(28px); transition:all .65s cubic-bezier(.175,.885,.32,1.275); }
+  .fade-up.visible { opacity:1; transform:translateY(0); }
+
+  /* Cape gradients */
+  .g1 { background:linear-gradient(155deg,#FF0033,#FF69B4,#1a0010); }
+  .g2 { background:linear-gradient(155deg,#00CCFF,#0066FF,#001a33); }
+  .g3 { background:linear-gradient(155deg,#FFD700,#FF8C00,#1a0f00); }
+  .g4 { background:linear-gradient(155deg,#00FF88,#00CC66,#001a0e); }
+  .g5 { background:linear-gradient(155deg,#BB00FF,#FF00AA,#1a001a); }
+  .g6 { background:linear-gradient(155deg,#FF4500,#FF0033,#1a0800); }
+  .g7 { background:linear-gradient(155deg,#00FFFF,#FF00FF,#001a1a); }
+  .g8 { background:linear-gradient(155deg,#FFFFFF,#AAAAAA,#111); }
+  .ga {
+    background:linear-gradient(155deg,#FF0033,#FF69B4,#FF0033);
+    background-size:200% 200%;
+    animation:animGrad 1.5s ease-in-out infinite;
+  }
+  @keyframes animGrad {
+    0%  { background-position:0% 50%; }
+    50% { background-position:100% 50%; }
+    100%{ background-position:0% 50%; }
+  }
+
+  @media(max-width:768px) {
+    nav { padding:0 20px; }
+    .nav-links { display:none; }
+    section { padding:60px 20px; }
+    .hero-stats { gap:24px; }
+    .hero-title { letter-spacing:-1px; }
+    .modal { padding:24px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="particles"></div>
+
+<!-- Navbar -->
+<nav>
+  <div class="nav-logo">SPARKY CAPE STORE</div>
+  <ul class="nav-links">
+    <li><a href="#capes">Capes</a></li>
+    <li><a href="#upload">Upload</a></li>
+    <li><a href="#how">Guide</a></li>
+    <li><a href="https://modrinth.com/user/sparkynox" target="_blank" class="nav-dl">Download Mod</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge">✦ Free Forever · No Login · Works on Cracked</div>
+  <h1 class="hero-title">
+    <span class="line1">SPARKY</span>
+    <span class="line2">CAPE STORE</span>
+  </h1>
+  <p class="hero-sub">Custom Capes &amp; Skins for Minecraft</p>
+  <div class="hero-actions">
+    <a href="#capes" class="btn-primary">Browse Collection</a>
+    <a href="#upload" class="btn-secondary">Upload Your Cape</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat"><span class="stat-num" id="capeCount">41+</span><span class="stat-label">Capes</span></div>
+    <div class="stat"><span class="stat-num">ANIM</span><span class="stat-label">Animated</span></div>
+    <div class="stat"><span class="stat-num">0</span><span class="stat-label">Login Needed</span></div>
+    <div class="stat"><span class="stat-num">FREE</span><span class="stat-label">Always</span></div>
+  </div>
+</section>
+
+<!-- Browse -->
+<section id="capes">
+  <div class="section-header fade-up">
+    <span class="section-tag">✦ Collection</span>
+    <h2 class="section-title">Browse <span>Capes & Skins</span></h2>
+    <div class="divider"></div>
+    <p class="section-desc">Click Copy URL — paste in the mod's Load Custom field. Instant equip!</p>
+  </div>
+
+  <div class="cat-tabs fade-up">
+    <button class="cat-tab active" onclick="filterCapes(event,'all')">All</button>
+    <button class="cat-tab" onclick="filterCapes(event,'static')">Static</button>
+    <button class="cat-tab" onclick="filterCapes(event,'animated')">Animated</button>
+    <button class="cat-tab" onclick="filterCapes(event,'skin')">Skins</button>
+  </div>
+
+  <div class="cape-grid" id="capeGrid"></div>
+</section>
+
+<!-- Upload -->
+<section id="upload" style="background:rgba(255,0,51,.015);border-top:1px solid rgba(255,0,51,.07);border-bottom:1px solid rgba(255,0,51,.07);">
+  <div class="section-header fade-up">
+    <span class="section-tag">✦ Contribute</span>
+    <h2 class="section-title">Upload Your <span>Creation</span></h2>
+    <div class="divider"></div>
+    <p class="section-desc">Share your cape or skin with the community. No account needed — goes live instantly.</p>
+  </div>
+  <div class="upload-zone fade-up" onclick="openModal()">
+    <span class="upload-icon">⬆</span>
+    <h3 class="upload-title">Drop Your PNG Here</h3>
+    <p class="upload-desc">Cape or Skin PNG — instantly visible to everyone using the mod.</p>
+    <div class="upload-specs">
+      <span class="spec-tag">PNG only</span>
+      <span class="spec-tag">Cape: 64×32</span>
+      <span class="spec-tag">Skin: 64×64</span>
+      <span class="spec-tag">Max 2MB</span>
+      <span class="spec-tag">Instant Live</span>
+    </div>
+    <button class="btn-primary" onclick="event.stopPropagation();openModal()">Upload Now</button>
+  </div>
+</section>
+
+<!-- How it works -->
+<section id="how">
+  <div class="section-header fade-up">
+    <span class="section-tag">✦ Guide</span>
+    <h2 class="section-title">How It <span>Works</span></h2>
+    <div class="divider"></div>
+  </div>
+  <div class="steps-grid">
+    <div class="step-card fade-up">
+      <span class="step-num">01</span>
+      <h3 class="step-title">Get the Mod</h3>
+      <p class="step-desc">Download xBetter Capes from Modrinth. Install in your Fabric mods folder.</p>
+    </div>
+    <div class="step-card fade-up">
+      <span class="step-num">02</span>
+      <h3 class="step-title">Open GUI</h3>
+      <p class="step-desc">Press G in-game. The Cape Store GUI opens instantly.</p>
+    </div>
+    <div class="step-card fade-up">
+      <span class="step-num">03</span>
+      <h3 class="step-title">Pick Here</h3>
+      <p class="step-desc">Browse this website, copy the URL, paste it in "Load Custom" in the mod.</p>
+    </div>
+    <div class="step-card fade-up">
+      <span class="step-num">04</span>
+      <h3 class="step-title">Enjoy!</h3>
+      <p class="step-desc">Cape or skin appears instantly. Works on all servers including cracked!</p>
+    </div>
+  </div>
+</section>
+
+<!-- Download CTA -->
+<section id="download" style="text-align:center;">
+  <div class="fade-up">
+    <span class="section-tag">✦ Get Started</span>
+    <h2 class="section-title">Download <span>xBetter Capes</span></h2>
+    <div class="divider"></div>
+    <p class="section-desc" style="margin-bottom:36px;">Free · Fabric · MC 1.21.4–1.21.11 · By SparkyNox &amp; SPA4RKIEE_XD</p>
+    <a href="https://modrinth.com/user/sparkynox" target="_blank" class="btn-primary">Download on Modrinth</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <span class="footer-logo">SPARKY CAPE STORE</span>
+  <p class="footer-desc">BY SPARKYNOX &amp; SPA4RKIEE_XD · NOT AFFILIATED WITH MOJANG</p>
+  <div class="footer-links">
+    <a href="https://modrinth.com/user/sparkynox" target="_blank">Modrinth</a>
+    <a href="#capes">Capes</a>
+    <a href="#upload">Upload</a>
+    <a href="#how">Guide</a>
+  </div>
+  <p class="footer-copy">© 2026 Sparky Cape Store. All rights reserved.</p>
+</footer>
+
+<!-- Upload Modal -->
+<div class="modal-overlay" id="uploadModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h3 class="modal-title">Upload Cape / Skin</h3>
+    <p style="color:rgba(255,255,255,.35);font-size:13px;margin-bottom:22px;">Goes live instantly. Zero login needed.</p>
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input class="form-input" id="uName" type="text" placeholder="e.g. Fire Dragon Cape" maxlength="32">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Type</label>
+      <select class="form-select" id="uType">
+        <option value="static">Static Cape</option>
+        <option value="animated">Animated Cape</option>
+        <option value="skin">Skin</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">PNG File</label>
+      <div class="file-drop" id="fileDrop" ondragover="onDragOver(event)" ondrop="onDrop(event)">
+        <input type="file" id="fileInput" accept=".png" onchange="onFileSelect(event)">
+        <p class="file-drop-text" id="fileDropText">Drag & drop or <span onclick="document.getElementById('fileInput').click()">browse</span></p>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Your Name (optional)</label>
+      <input class="form-input" id="uAuthor" type="text" placeholder="Anonymous" maxlength="32">
+    </div>
+    <button class="btn-primary" style="width:100%;text-align:center;" onclick="submitUpload()">Upload &amp; Go Live →</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Demo capes data
+const DEMO = [
+  {id:'none',   name:'No Cape',   type:'static',   g:'g8', author:'SparkyNox'},
+  {id:'cape1',  name:'Cape 1',    type:'static',   g:'g1', author:'SparkyNox'},
+  {id:'cape2',  name:'Cape 2',    type:'static',   g:'g2', author:'SparkyNox'},
+  {id:'cape3',  name:'Cape 3',    type:'static',   g:'g3', author:'SparkyNox'},
+  {id:'cape4',  name:'Cape 4',    type:'static',   g:'g4', author:'SparkyNox'},
+  {id:'cape5',  name:'Cape 5',    type:'static',   g:'g5', author:'SparkyNox'},
+  {id:'cape6',  name:'Cape 6',    type:'static',   g:'g6', author:'SparkyNox'},
+  {id:'cape7',  name:'Cape 7',    type:'static',   g:'g7', author:'SparkyNox'},
+  {id:'cape8',  name:'Cape 8',    type:'static',   g:'g1', author:'SparkyNox'},
+  {id:'cape9',  name:'Cape 9',    type:'static',   g:'g2', author:'SparkyNox'},
+  {id:'cape10', name:'Cape 10',   type:'static',   g:'g3', author:'SparkyNox'},
+  {id:'pixellab',name:'PixelLab', type:'animated', g:'ga', author:'SparkyNox'},
+];
+
+const BASE_URL = 'https://sparky-cape-store.vercel.app/api';
+let currentFilter = 'all';
+let selectedFile = null;
+
+function getUploads() {
+  try { return JSON.parse(localStorage.getItem('scs_v2') || '[]'); } catch(e) { return []; }
+}
+function saveUpload(item) {
+  const u = getUploads();
+  u.unshift(item);
+  localStorage.setItem('scs_v2', JSON.stringify(u.slice(0,200)));
+}
+
+function filterCapes(e, type) {
+  currentFilter = type;
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  e.target.classList.add('active');
+  renderGrid();
+}
+
+function renderGrid() {
+  const grid = document.getElementById('capeGrid');
+  const all = [...DEMO, ...getUploads()];
+  const filtered = currentFilter === 'all' ? all
+    : all.filter(c => c.type === currentFilter);
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<p style="text-align:center;color:rgba(255,255,255,.3);grid-column:1/-1;padding:40px;">No items yet. Be the first to upload!</p>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map((c,i) => `
+    <div class="cape-card fade-up" style="transition-delay:${i*35}ms">
+      <div class="cape-preview">
+        ${c.type==='animated'?'<div class="anim-badge">ANIM</div>':''}
+        <div class="cape-visual">
+          ${c.imgUrl
+            ? `<img class="cape-img" src="${c.imgUrl}" alt="${c.name}">`
+            : `<div class="cape-placeholder ${c.g||'g1'}"></div>`}
+        </div>
+      </div>
+      <div class="cape-info">
+        <div class="cape-name">${c.name}</div>
+        <div class="cape-meta">${c.type.toUpperCase()} · ${c.author||'Community'}</div>
+        <div class="cape-actions">
+          <button class="btn-equip" onclick="copyUrl('${c.id}','${c.name}','${c.type}','${c.imgUrl||''}')">
+            ${c.type==='skin'?'Copy /xskin':'Copy URL'}
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  requestAnimationFrame(() => {
+    grid.querySelectorAll('.fade-up').forEach(el => {
+      setTimeout(() => el.classList.add('visible'), 50);
+    });
+  });
+
+  const total = all.filter(c => c.type !== 'skin').length;
+  document.getElementById('capeCount').textContent = total + '+';
+}
+
+function copyUrl(id, name, type, imgUrl) {
+  let text;
+  if (type === 'skin') {
+    text = `/xskin ${BASE_URL}/skin/${id}`;
+  } else if (imgUrl && imgUrl.startsWith('data:')) {
+    showToast('Save the PNG and use Load Custom!');
+    return;
+  } else {
+    text = `${BASE_URL}/cape/${id}`;
+  }
+  navigator.clipboard?.writeText(text).then(() => {
+    showToast(`✓ ${name} copied!`);
+  }).catch(() => {
+    showToast(`URL: ${text}`);
+  });
+}
+
+// Upload modal
+function openModal() { document.getElementById('uploadModal').classList.add('active'); }
+function closeModal() {
+  document.getElementById('uploadModal').classList.remove('active');
+  selectedFile = null;
+  document.getElementById('fileDropText').innerHTML =
+    'Drag & drop or <span onclick="document.getElementById(\'fileInput\').click()">browse</span>';
+  document.getElementById('fileDrop').style.borderColor = '';
+}
+
+function onDragOver(e) { e.preventDefault(); document.getElementById('fileDrop').classList.add('dragover'); }
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('fileDrop').classList.remove('dragover');
+  if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+}
+function onFileSelect(e) { if(e.target.files[0]) setFile(e.target.files[0]); }
+
+function setFile(file) {
+  if (!file.name.endsWith('.png')) { showToast('Only PNG files!'); return; }
+  if (file.size > 2*1024*1024) { showToast('Max 2MB!'); return; }
+  selectedFile = file;
+  document.getElementById('fileDropText').textContent = '✓ ' + file.name;
+  document.getElementById('fileDrop').style.borderColor = '#FF69B4';
+}
+
+function submitUpload() {
+  const name = document.getElementById('uName').value.trim();
+  const type = document.getElementById('uType').value;
+  const author = document.getElementById('uAuthor').value.trim() || 'Anonymous';
+  if (!name) { showToast('Enter a name!'); return; }
+  if (!selectedFile) { showToast('Select a PNG!'); return; }
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    saveUpload({ id:'u_'+Date.now(), name, type, author, imgUrl:e.target.result, uploadedAt:new Date().toISOString() });
+    closeModal();
+    renderGrid();
+    showToast('🎉 ' + name + ' is LIVE!');
+  };
+  reader.readAsDataURL(selectedFile);
+}
+
+// Toast
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Particles
+(function(){
+  const c = document.getElementById('particles');
+  const colors = ['#FF0033','#FF69B4','#FF3366','#FF1493','#CC0028'];
+  for(let i=0;i<35;i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random()*2.5+1;
+    p.style.cssText = `left:${Math.random()*100}%;width:${size}px;height:${size}px;background:${colors[i%colors.length]};animation-duration:${Math.random()*14+9}s;animation-delay:${Math.random()*12}s;--drift:${(Math.random()-.5)*120}px;opacity:${Math.random()*.4+.15};`;
+    c.appendChild(p);
+  }
+})();
+
+// Scroll animations
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, {threshold:0.08});
+document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
+
+// Modal click outside close
+document.getElementById('uploadModal').addEventListener('click', e => {
+  if(e.target.id==='uploadModal') closeModal();
+});
+
+// Init
+renderGrid();
+setTimeout(() => {
+  document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
+}, 200);
+</script>
+</body>
+</html>

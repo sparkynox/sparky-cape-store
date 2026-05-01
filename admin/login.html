@@ -1,1 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login — Sparky Cape Store</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#000;color:#fff;font-family:'Rajdhani',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(255,0,51,.08),transparent 60%);pointer-events:none;}
 
+  .box{
+    background:#0C0C16;border:1px solid rgba(255,0,51,.2);border-radius:16px;
+    padding:48px 40px;width:90%;max-width:400px;position:relative;
+  }
+  .box::before{content:'';position:absolute;top:0;left:20%;right:20%;height:2px;background:linear-gradient(90deg,transparent,#FF0033,#FF69B4,transparent);}
+
+  .logo{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,.3);text-transform:uppercase;text-align:center;margin-bottom:8px;}
+  .title{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;text-align:center;background:linear-gradient(135deg,#FF0033,#FF69B4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
+  .subtitle{text-align:center;color:rgba(255,255,255,.3);font-size:13px;letter-spacing:2px;margin-bottom:36px;}
+
+  .form-group{margin-bottom:18px;}
+  label{display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:7px;font-weight:600;}
+  input{
+    width:100%;background:rgba(255,255,255,.03);border:1px solid #1A1A1A;
+    border-radius:8px;padding:12px 16px;color:white;
+    font-family:'Rajdhani',sans-serif;font-size:15px;outline:none;transition:all .3s;
+  }
+  input:focus{border-color:#FF0033;box-shadow:0 0 0 3px rgba(255,0,51,.1);}
+  input::placeholder{color:rgba(255,255,255,.2);}
+
+  .btn{
+    width:100%;padding:14px;margin-top:8px;
+    background:linear-gradient(135deg,#FF0033,#FF69B4);
+    border:none;border-radius:8px;color:white;
+    font-family:'Orbitron',monospace;font-size:12px;font-weight:700;
+    letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .3s;
+    position:relative;overflow:hidden;
+  }
+  .btn:hover{box-shadow:0 0 24px rgba(255,0,51,.5);transform:translateY(-1px);}
+  .btn:active{transform:translateY(0);}
+
+  .error{
+    background:rgba(255,0,51,.1);border:1px solid rgba(255,0,51,.3);
+    border-radius:8px;padding:10px 14px;margin-top:16px;
+    color:#FF6B6B;font-size:13px;letter-spacing:1px;text-align:center;
+    display:none;
+  }
+  .error.show{display:block;}
+
+  .back{display:block;text-align:center;margin-top:20px;color:rgba(255,255,255,.3);font-size:12px;letter-spacing:1px;text-decoration:none;transition:color .3s;}
+  .back:hover{color:#FF69B4;}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">Sparky Cape Store</div>
+  <div class="title">Admin Login</div>
+  <div class="subtitle">RESTRICTED ACCESS</div>
+
+  <div class="form-group">
+    <label>Username</label>
+    <input type="text" id="uname" placeholder="Enter username" autocomplete="off">
+  </div>
+  <div class="form-group">
+    <label>Password</label>
+    <input type="password" id="pass" placeholder="Enter password" autocomplete="off">
+  </div>
+
+  <button class="btn" onclick="doLogin()">Login →</button>
+  <div class="error" id="err">Invalid username or password.</div>
+  <a href="/" class="back">← Back to Store</a>
+</div>
+
+<script>
+// Credentials come from Vercel API — never hardcoded here
+async function doLogin() {
+  const u = document.getElementById('uname').value.trim();
+  const p = document.getElementById('pass').value.trim();
+  if (!u || !p) { showErr('Fill in both fields.'); return; }
+
+  try {
+    const res = await fetch('/api/admin-auth', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({username: u, password: p})
+    });
+    const data = await res.json();
+    if (data.ok) {
+      sessionStorage.setItem('scs_admin_token', data.token);
+      sessionStorage.setItem('scs_admin_user', u);
+      window.location.href = '/admin/panel.html';
+    } else {
+      showErr('Invalid username or password.');
+    }
+  } catch(e) {
+    showErr('Server error. Try again.');
+  }
+}
+
+function showErr(msg) {
+  const el = document.getElementById('err');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>

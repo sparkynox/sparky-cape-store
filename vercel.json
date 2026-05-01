@@ -1,0 +1,21 @@
+{
+  "rewrites": [
+    { "source": "/admin", "destination": "/admin/login.html" },
+    { "source": "/admin/", "destination": "/admin/login.html" }
+  ],
+  "headers": [
+    {
+      "source": "/admin/panel.html",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex" },
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/admin/login.html",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex" }
+      ]
+    }
+  ]
+}
